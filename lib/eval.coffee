@@ -21,7 +21,7 @@ module.exports =
   # TODO: implement block finding in Atom
   eval: ->
     editor = atom.workspace.getActiveTextEditor()
-    for sel in editor.getSelections()
+    for sel in editor?.getSelections()
       client.msg 'eval', @evalData(editor, sel), ({start, end, result}) =>
         view = if result.type then result.view else result
         view = @ink.tree.fromJson(view)[0]
@@ -54,3 +54,20 @@ module.exports =
       if @errorLines?.r == r
         @errorLines.lights.destroy()
       destroyResult()
+
+  getDocs: ->
+    editor = atom.workspace.getActiveTextEditor()
+    cursor = editor.getLastCursor()
+    line = cursor.getBufferRow()
+    range = cursor.getCurrentWordBufferRange()
+    word = editor.getTextInBufferRange range
+    client.msg 'docs', {code: word}, ({result}) =>
+      view = if result.type then result.view else result
+      console.log view
+      view = @ink.tree.fromJson(view)[0]
+      console.log view
+      @ink.links.linkify view
+      r = @ink?.results.toggleDocs editor, range,
+        content: view
+        clas: 'julia'
+      notifications.show "Evaluation Finished"
